@@ -8,8 +8,5 @@
       "source": "/(.*)",
       "destination": "/frontend/$1"
     }
-  ],
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist",
-  "framework": null
+  ]
 }
