@@ -5,7 +5,7 @@ function App() {
   return (
     <div style={{ padding: '2rem', fontFamily: 'system-ui' }}>
       <h1>Vinson AI Cobranza</h1>
-      <p>Sistema de cobranza con IA para la industria vitivinícola</p>
+            <p>Sistema de cobranza con IA</p>
     </div>
   )
 }
