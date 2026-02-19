@@ -1,28 +1,37 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+const API_URL = import.meta.env.VITE_BACKEND_URL || 'https://vinson-ai-cobranza-backend.vercel.app'
+
 function Home() {
   const navigate = useNavigate()
-  const [usuario, setUsuario] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [cargando, setCargando] = useState(false)
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
     setError('')
     setCargando(true)
-    if (usuario === 'admin' && password === 'vinson2024') {
-      setTimeout(() => {
-        setCargando(false)
+    try {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
         navigate('/dashboard')
-      }, 800)
-    } else {
-      setTimeout(() => {
-        setCargando(false)
-        setError('Usuario o contrasena incorrectos')
-      }, 800)
+      } else {
+        setError(data.error || 'Credenciales invalidas')
+      }
+    } catch (err) {
+      setError('Error de conexion con el servidor')
     }
+    setCargando(false)
   }
 
   return (
@@ -33,17 +42,17 @@ function Home() {
             VINSON
           </div>
           <h2 className="text-gray-700 text-lg font-medium">Sistema de Cobranza con IA</h2>
-          <p className="text-gray-400 text-sm mt-1">Ingresa tus credenciales para continuar</p>
+          <p className="text-gray-400 text-sm mt-1">Parque del Recuerdo</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Correo electronico</label>
             <input
-              type="text"
-              value={usuario}
-              onChange={(e) => setUsuario(e.target.value)}
-              placeholder="Ingresa tu usuario"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="ejecutivo@parque.cl"
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
@@ -76,7 +85,13 @@ function Home() {
           </button>
         </form>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
+        <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+          <p className="text-xs text-blue-600 font-medium mb-1">Accesos de prueba:</p>
+          <p className="text-xs text-blue-500">ejecutivo1@parque.cl / demo123</p>
+          <p className="text-xs text-blue-500">ejecutivo2@parque.cl / demo123</p>
+        </div>
+
+        <p className="text-center text-xs text-gray-400 mt-4">
           Vinson AI Cobranza 2024 - Parque del Recuerdo
         </p>
       </div>
