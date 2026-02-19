@@ -12,7 +12,6 @@ function Home() {
     e.preventDefault()
     setError('')
     setCargando(true)
-    // Credenciales demo
     if (usuario === 'admin' && password === 'vinson2024') {
       setTimeout(() => {
         setCargando(false)
@@ -21,7 +20,7 @@ function Home() {
     } else {
       setTimeout(() => {
         setCargando(false)
-        setError('Usuario o contraseña incorrectos')
+        setError('Usuario o contrasena incorrectos')
       }, 800)
     }
   }
@@ -51,12 +50,12 @@ function Home() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contrase\u00f1a</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Contrasena</label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Ingresa tu contrase\u00f1a"
+              placeholder="Ingresa tu contrasena"
               className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
             />
@@ -78,7 +77,7 @@ function Home() {
         </form>
 
         <p className="text-center text-xs text-gray-400 mt-6">
-          Vinson AI Cobranza &copy; 2024 &mdash; Parque del Recuerdo
+          Vinson AI Cobranza 2024 - Parque del Recuerdo
         </p>
       </div>
     </div>
