@@ -6,7 +6,6 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   const user = requireAuth(req, res);
@@ -15,41 +14,57 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
   const { clientId, warningKey, solutionKey } = req.body || {};
-  const client = CLIENTS.find(c => c.id === clientId);
-  
-  if (!client) return res.status(404).json({ error: 'Cliente no encontrado' });
+
+  const client = CLIENTS.find(c => c.id === clientId || c.id === String(clientId));
+  if (!client) return res.status(404).json({ error: 'Cliente no encontrado', clientId, available: CLIENTS.map(c=>c.id) });
+
+  const warning = WARNINGS[warningKey] || { label: 'Recordatorio de Pago' };
+  const solution = SOLUTIONS.find(s => s.id === solutionKey) || { label: 'Renegociacion' };
 
   const sensitiveContext = client.isSensitiveDate
-    ? `ATENCIÓN: Hoy es aniversario del fallecimiento de ${client.deceasedName}. Tono de MÁXIMO RESPETO Y CONDOLENCIA. No presionar, sino acompañar y ofrecer solución como ayuda.`
+    ? `ATENCION: Hoy es aniversario del fallecimiento de ${client.deceasedName}. Tono de MAXIMO RESPETO Y CONDOLENCIA.`
     : '';
 
-  const warning = WARNINGS[warningKey] || { label: 'Recordatorio' };
-  const solution = SOLUTIONS.find(s => s.id === solutionKey) || { label: 'Regularización' };
-
-  const prompt = `
-Rol: Ejecutivo Senior de Parque del Recuerdo (cementerio premium).
+  const prompt = `Rol: Ejecutivo Senior de Parque del Recuerdo (cementerio premium).
 ${sensitiveContext}
-
 Cliente: ${client.name}
 Deuda: ${formatCurrencyCLP(client.debt)}
-Días de mora: ${client.daysOverdue}
+Dias de mora: ${client.daysOverdue}
 Producto: ${client.product}
-Alerta crítica: "${warning.label}"
-Solución propuesta: "${solution.label}"
+Alerta critica: "${warning.label || warningKey}"
+Solucion propuesta: "${solution.label || solutionKey}"
 
-Genera un guión CORTO y empático (máximo 8 líneas) para contacto telefónico que:
+Genera un guion CORTO y empatico (maximo 8 lineas) para contacto telefonico que:
 1. Saludo respetuoso considerando que es un servicio funerario
-2. Menciona brevemente el riesgo "${warning.label}" sin alarmar
-3. Ofrece la solución "${solution.label}" como forma de dar tranquilidad a la familia
-4. Cierre invitando a conversación
-
-Tono: Profesional, cálido, respetuoso. Sin tecnicismos.`;
+2. Menciona brevemente el riesgo "${warning.label || warningKey}" sin alarmar
+3. Ofrece la solucion "${solution.label || solutionKey}" como forma de dar tranquilidad a la familia
+4. Cierre invitando a conversacion
+Tono: Profesional, calido, respetuoso.`;
 
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ text: 'Error: API key no configurada. Contacta al administrador.' });
+
+  let text = null;
+
+  if (apiKey) {
+    try {
+      text = await geminiGenerate(prompt, apiKey);
+      if (text && (text.includes('no disponible') || text.includes('Verifique'))) {
+        text = null;
+      }
+    } catch (e) {
+      console.error('Gemini error:', e.message);
+    }
   }
 
-  const text = await geminiGenerate(prompt, apiKey);
+  if (!text) {
+    text = `Buenos dias, ${client.name}.
+
+Le contactamos del equipo de Parque del Recuerdo. Nuestros registros indican una deuda de ${formatCurrencyCLP(client.debt)} con ${client.daysOverdue} dias de mora en su contrato de ${client.product}.
+
+Sabemos que son momentos dificiles. Por eso queremos informarle que existe un riesgo de ${warning.label || warningKey}, y nos gustaria ofrecerle una solucion de ${solution.label || solutionKey} que se ajuste a sus posibilidades.
+
+Podriamos coordinar una reunion o llamada para revisar las opciones disponibles? Estamos aqui para ayudarle a encontrar la mejor alternativa para su familia.`;
+  }
+
   res.status(200).json({ text });
 }
